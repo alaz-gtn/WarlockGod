@@ -1592,6 +1592,11 @@ def fresh_login(cls):
     M.Fire("START_AUTOREPEAT_SPELL")
     M.Fire("PLAYER_SWING", 1.6, 2)
     M.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", 6229)
+    # At the class trainer, asking for the talent reset
+    M.GOSSIP_OPTIONS = game.eval('{ { gossipOptionID = 102, name = "I wish to unlearn my talents." } }')
+    M.Fire("GOSSIP_SHOW")
+    M.POPUPS.CONFIRM_TALENT_WIPE = M.CreateFrame("Frame")
+    M.Fire("CONFIRM_TALENT_WIPE", 10000, 0)
     M.RunTimers()
     M.Tick()
     gns.RefreshAll()
@@ -1603,7 +1608,7 @@ printed.clear()
 W, wns = fresh_login("WARLOCK")
 wshown = set(W.VisibleFrames().values())
 check({"WarlockGodFood", "WarlockGodReminders", "WarlockGodShards", "WarlockGodDemonHealth", "WarlockGodRange",
-       "WarlockGodBarrier", "WarlockGodWand", "WarlockGodInterrupt"} <= wshown,
+       "WarlockGodBarrier", "WarlockGodWand", "WarlockGodInterrupt", "WarlockGodRespec"} <= wshown,
       f"as a warlock that login shows its reminders, bars and warnings: {sorted(wshown)}")
 wrows = [r.text.text for r in wns.FoodState().reagentRows.values() if r.shown]
 check(ns.REPAIR_TEXT.WORN % 5 in wrows and ns.REPAIR_TEXT.BAGS % 2 in wrows, f"the worn gear and the bags among them: {wrows}")
@@ -1619,7 +1624,7 @@ check(all(not m.click.shown for m in mmembers.values()), "no button to click eit
 # Moving the displays: nothing to move
 printed.clear()
 mns.SetUnlocked(True)
-check(not mns.unlocked and printed == [mns.L.PREFIX + mns.L.ONLY_WARLOCK], f"Move displays: it says there's nothing to move: {printed}")
+check(not mns.unlocked and printed == [mns.L.PREFIX + mns.L.OTHER_CLASS], f"Move displays: it says there's nothing to move: {printed}")
 shown = list(M.VisibleFrames().values())
 check(not shown, f"and shows nothing: {shown}")
 # Even if the addon were unlocked anyway: no sample of anything
