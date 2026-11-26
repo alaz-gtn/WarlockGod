@@ -1,3 +1,7 @@
+# 1.0.1
+
+- Fixed Lua errors on login: some texts were written before they had a font.
+
 # 1.0.0
 
 - First release, in English and Spanish:

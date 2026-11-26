@@ -186,8 +186,9 @@ function ns.StyleDebuffs()
 		icon.box:SetSize(db.size, db.size)
 		icon.box:ClearAllPoints()
 		icon.box:SetPoint("LEFT", sample, "LEFT", (i - 1) * (db.size + GAP), 0)
-		icon.text:SetText(({ "14", "9", "21" })[i])
+		-- The font first: a text without one can't be written
 		ns.UseFont(icon.text, ns.FONTS[ns.db.range.font], max(floor(db.size * 0.5), 9), "OUTLINE")
+		icon.text:SetText(({ "14", "9", "21" })[i])
 	end
 	if InCombatLockdown() then
 		pending = true
