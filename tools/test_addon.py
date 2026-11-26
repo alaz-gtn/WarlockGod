@@ -1532,66 +1532,84 @@ S["class"] = "WARLOCK"
 # buff, a herbalist with no tracking on, a demon hurt, a shield, a target casting, a wand shooting):
 # WarlockGod draws nothing, says nothing in the chat, and has nothing to move. Only its minimap
 # button and its options
-mage = LuaRuntime(unpack_returned_tuples=True)
-mage.globals().py_print = lambda *a: printed.append(" ".join(str(x) for x in a))
-mage.globals().LOCALE = LOCALE
-mage.execute(MOCK)
-mage.execute(MOCK_GUARDS)
-mage.execute('''
-SPELLS[1459] = "Arcane Intellect"
-SPELLS[3561] = "Teleport: Stormwind"
-ITEM_NAMES[17031] = "Rune of Teleportation"
-G.class = "MAGE"
-for _, id in ipairs({ 1459, 3561, 2383, 686, 687, 706, 688, 697, 6201, 693, 2362, 5019, 18094 }) do G.known[id] = true end
-G.durability[16] = { 5, 100 }
-G.freeSlots = { [0] = 2, [1] = 0, [2] = 0, [3] = 0, [4] = 0 }
-G.group, G.party = true, { true }
-G.tracking = { { name = "Find Herbs", spellID = 2383, active = false } }
-G.pet, G.petHealth = true, 10
-G.petSpells[19244] = true
-G.absorb = 500
-G.target, G.dist = { hostile = true }, 22
-G.cast = { "Fireball", false }
-G.wand = 950
-G.items[6265] = 0
-G.canRepair = true
-MERCHANT = { 17031 }
-function VisibleFrames()
-  local out = {}
-  for name, f in pairs(NAMED) do
-    local p, seen = f, true
-    while p do
-      if not rawget(p, "shown") then seen = false break end
-      p = rawget(p, "parent")
+def fresh_login(cls):
+    """A new game with the addon, logged in as cls with every reason to remind something"""
+    game = LuaRuntime(unpack_returned_tuples=True)
+    game.globals().py_print = lambda *a: printed.append(" ".join(str(x) for x in a))
+    game.globals().LOCALE = LOCALE
+    game.globals().CLS = cls
+    game.execute(MOCK)
+    game.execute(MOCK_GUARDS)
+    game.execute('''
+    SPELLS[1459] = "Arcane Intellect"
+    SPELLS[3561] = "Teleport: Stormwind"
+    ITEM_NAMES[17031] = "Rune of Teleportation"
+    G.class = CLS
+    for _, id in ipairs({ 1459, 3561, 2383, 686, 687, 706, 688, 697, 6201, 693, 2362, 5019, 18094 }) do G.known[id] = true end
+    G.durability[16] = { 5, 100 }
+    G.freeSlots = { [0] = 2, [1] = 0, [2] = 0, [3] = 0, [4] = 0 }
+    G.group, G.party = true, { true }
+    G.tracking = { { name = "Find Herbs", spellID = 2383, active = false } }
+    G.pet, G.petHealth = true, 10
+    G.petSpells[19244] = true
+    G.absorb = 500
+    G.target, G.dist = { hostile = true }, 22
+    G.cast = { "Fireball", false }
+    G.wand = 950
+    G.items[6265] = 0
+    G.canRepair = true
+    MERCHANT = { 17031 }
+    function VisibleFrames()
+      local out = {}
+      for name, f in pairs(NAMED) do
+        local p, seen = f, true
+        while p do
+          if not rawget(p, "shown") then seen = false break end
+          p = rawget(p, "parent")
+        end
+        if seen and not name:find("Minimap") and not name:find("Options") then out[#out + 1] = name end
+      end
+      table.sort(out)
+      return out
     end
-    if seen and not name:find("Minimap") and not name:find("Options") then out[#out + 1] = name end
-  end
-  table.sort(out)
-  return out
-end
-''')
-mns = mage.table()
-mload = mage.eval('function(src, name) return assert(loadstring(src, "@" .. name)) end')
-for fname in re.findall(r"^(\w+\.lua)$", toc, re.M):
-    mload(Path(ADDON, fname).read_text(encoding="utf-8"), fname)("WarlockGod", mns)
-M = mage.globals()
+    ''')
+    gns = game.table()
+    gload = game.eval('function(src, name) return assert(loadstring(src, "@" .. name)) end')
+    for fname in re.findall(r"^(\w+\.lua)$", toc, re.M):
+        gload(Path(ADDON, fname).read_text(encoding="utf-8"), fname)("WarlockGod", gns)
+    M = game.globals()
+    printed.clear()
+    M.Fire("ADDON_LOADED", "WarlockGod")
+    M.Fire("PLAYER_LOGIN")
+    for ev in ("SPELLS_CHANGED", "BAG_UPDATE_DELAYED", "GROUP_ROSTER_UPDATE", "UPDATE_INVENTORY_DURABILITY",
+               "MINIMAP_UPDATE_TRACKING", "PLAYER_REGEN_ENABLED", "PLAYER_TARGET_CHANGED", "PET_BAR_UPDATE",
+               "MERCHANT_SHOW"):
+        M.Fire(ev)
+    M.Fire("UNIT_AURA", "player")
+    M.Fire("UNIT_PET", "player")
+    M.Fire("UNIT_HEALTH", "pet")
+    M.Fire("UNIT_SPELLCAST_START", "target")
+    M.Fire("START_AUTOREPEAT_SPELL")
+    M.Fire("PLAYER_SWING", 1.6, 2)
+    M.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", 6229)
+    M.RunTimers()
+    M.Tick()
+    gns.RefreshAll()
+    return M, gns
+
+
+# Checked first as a warlock: the same login does remind it of things, so the mage's is a real test
 printed.clear()
-M.Fire("ADDON_LOADED", "WarlockGod")
-M.Fire("PLAYER_LOGIN")
-for ev in ("SPELLS_CHANGED", "BAG_UPDATE_DELAYED", "GROUP_ROSTER_UPDATE", "UPDATE_INVENTORY_DURABILITY",
-           "MINIMAP_UPDATE_TRACKING", "PLAYER_REGEN_ENABLED", "PLAYER_TARGET_CHANGED", "PET_BAR_UPDATE",
-           "MERCHANT_SHOW"):
-    M.Fire(ev)
-M.Fire("UNIT_AURA", "player")
-M.Fire("UNIT_PET", "player")
-M.Fire("UNIT_HEALTH", "pet")
-M.Fire("UNIT_SPELLCAST_START", "target")
-M.Fire("START_AUTOREPEAT_SPELL")
-M.Fire("PLAYER_SWING", 1.6, 2)
-M.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", 6229)
-M.RunTimers()
-M.Tick()
-mns.RefreshAll()
+W, wns = fresh_login("WARLOCK")
+wshown = set(W.VisibleFrames().values())
+check({"WarlockGodFood", "WarlockGodReminders", "WarlockGodShards", "WarlockGodDemonHealth", "WarlockGodRange",
+       "WarlockGodBarrier", "WarlockGodWand", "WarlockGodInterrupt"} <= wshown,
+      f"as a warlock that login shows its reminders, bars and warnings: {sorted(wshown)}")
+wrows = [r.text.text for r in wns.FoodState().reagentRows.values() if r.shown]
+check(ns.REPAIR_TEXT.WORN % 5 in wrows and ns.REPAIR_TEXT.BAGS % 2 in wrows, f"the worn gear and the bags among them: {wrows}")
+check(any(ns.REPAIR_TEXT.VENDOR % 5 in line for line in printed), f"and the repair vendor's line in the chat: {printed[:2]}")
+printed.clear()
+M, mns = fresh_login("MAGE")
 shown = list(M.VisibleFrames().values())
 check(not shown, f"a mage logged in: nothing of WarlockGod's on screen: {shown}")
 check(M.NAMED["WarlockGodMinimapButton"].shown, "only its minimap button")
@@ -1612,6 +1630,8 @@ for f in M.FRAMES.values():
         f.scripts.OnUpdate(f, 0.3)
 shown = list(M.VisibleFrames().values())
 check(not shown, f"unlocked anyway: still nothing: {shown}")
+icons = [m.key for m in mmembers.values() if m.frame.shown]
+check(not icons, f"not even a reminder icon under its hidden row: {icons}")
 mns.unlocked = False
 mns.RefreshAll()
 # What you ask still gets its answer
