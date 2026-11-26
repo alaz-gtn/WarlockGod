@@ -1,0 +1,87 @@
+"""Sube a CurseForge la versión que pone el TOC: el zip, su nombre, la versión del juego y su
+entrada de curseforge/changelog.md. El proyecto es el ## X-Curse-Project-ID del TOC.
+
+Uso: python -I publish.py            (con la clave de CurseForge en CF_API_KEY)
+     python -I publish.py --dry-run  (enseña lo que subiría, sin subir nada)
+GitHub Actions lo lanza al subir una etiqueta vX.Y.Z (.github/workflows/release.yml).
+"""
+import json
+import os
+import re
+import subprocess
+import sys
+import urllib.error
+import urllib.request
+import uuid
+from pathlib import Path
+
+API = "https://wow.curseforge.com/api"
+
+root = Path(__file__).resolve().parent.parent
+toc = (root / "WarlockGod" / "WarlockGod.toc").read_text(encoding="utf-8")
+version = re.search(r"^## Version:\s*(\S+)", toc, re.M).group(1)
+interface = int(re.search(r"^## Interface:\s*(\d+)", toc, re.M).group(1))
+game = f"{interface // 10000}.{interface // 100 % 100}.{interface % 100}"  # 16001 is 1.60.1
+project = re.search(r"^## X-Curse-Project-ID:\s*(\d+)", toc, re.M)
+
+tag = os.environ.get("GITHUB_REF_NAME") if os.environ.get("GITHUB_REF_TYPE") == "tag" else None
+if tag and tag != f"v{version}":
+    sys.exit(f"La etiqueta {tag} no coincide con la versión del TOC ({version})")
+
+# La entrada de esta versión: de su título al siguiente
+log = (root / "curseforge" / "changelog.md").read_text(encoding="utf-8")
+entry = re.search(rf"^# {re.escape(version)}[ \t]*\n(.*?)(?=^# |\Z)", log, re.M | re.S)
+if not entry:
+    sys.exit(f"curseforge/changelog.md no tiene la entrada # {version}")
+
+subprocess.run([sys.executable, "-I", str(root / "tools" / "build_zip.py")], check=True, stdout=subprocess.DEVNULL)
+zip_path = root / "release" / f"WarlockGod-{version}.zip"
+
+metadata = {
+    "changelog": entry.group(1).strip(),
+    "changelogType": "markdown",
+    "displayName": f"WarlockGod {version}",
+    "releaseType": "release",
+}
+if "--dry-run" in sys.argv:
+    print(json.dumps({**metadata, "gameVersions": [game], "project": project and int(project.group(1))}, indent=2,
+                     ensure_ascii=False))
+    print(zip_path)
+    sys.exit()
+
+if not project:
+    sys.exit("Falta ## X-Curse-Project-ID en WarlockGod/WarlockGod.toc (el ID del proyecto de CurseForge)")
+token = (os.environ.get("CF_API_KEY") or "").strip()  # a pasted key may bring a space or a line break
+if not token:
+    sys.exit("Falta la clave de CurseForge en CF_API_KEY")
+
+
+def call(path, body=None, content_type=None):
+    request = urllib.request.Request(API + path, data=body, headers={"X-Api-Token": token, "User-Agent": "WarlockGod"})
+    if content_type:
+        request.add_header("Content-Type", content_type)
+    try:
+        with urllib.request.urlopen(request) as response:
+            return json.load(response)
+    except urllib.error.HTTPError as e:
+        # The key's length helps tell a bad paste, without showing the key
+        sys.exit(f"CurseForge respondió {e.code} a {path} (clave de {len(token)} caracteres): "
+                 f"{e.read().decode(errors='replace')}")
+
+
+ids = [v["id"] for v in call("/game/versions") if v["name"] == game]
+if len(ids) != 1:
+    sys.exit(f"CurseForge tiene {len(ids)} versiones del juego llamadas {game}")
+metadata["gameVersions"] = ids
+
+boundary = uuid.uuid4().hex
+body = b"".join([
+    f'--{boundary}\r\nContent-Disposition: form-data; name="metadata"\r\n\r\n'.encode(),
+    json.dumps(metadata).encode(),
+    f'\r\n--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="{zip_path.name}"\r\n'
+    "Content-Type: application/zip\r\n\r\n".encode(),
+    zip_path.read_bytes(),
+    f"\r\n--{boundary}--\r\n".encode(),
+])
+result = call(f"/projects/{project.group(1)}/upload-file", body, f"multipart/form-data; boundary={boundary}")
+print(f"WarlockGod {version} subido a CurseForge (archivo {result['id']}, juego {game})")

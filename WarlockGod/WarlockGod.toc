@@ -1,0 +1,34 @@
+## Interface: 16001
+## Title: WarlockGod
+## Notes: Quality of life for warlocks: clickable reminders for your demon, Soul Link, armor, healthstone, soulstone, weapon stone and gathering tracking, a soul shard count, small animations for Shadow Trance, Soul Harvest, Decimation and Shadow and Flame, a shield bar, a wand swing timer, your big cooldowns back, your effects on the target, Spell Lock ready, your demon's health, range and aggro. /warlockgod
+## Notes-esES: Mejoras para brujos: avisos clicables de demonio, Enlace de alma, armadura, piedra de salud, de alma y del arma y rastreo de recolección, contador de fragmentos de alma, animaciones pequeñas para Trance de las Sombras, Cosecha de almas, Diezmar y Sombra y llama, barra de escudos, barra de golpe de la varita, cooldowns que vuelven, tus efectos en el objetivo, Bloqueo de hechizo listo, la vida del demonio, distancia y agro. /brujo
+## Notes-esMX: Mejoras para brujos: avisos clicables de demonio, Enlace de alma, armadura, piedra de salud, de alma y del arma y rastreo de recolección, contador de fragmentos de alma, animaciones pequeñas para Trance de las Sombras, Cosecha de almas, Diezmar y Sombra y llama, barra de escudos, barra de golpe de la varita, cooldowns que vuelven, tus efectos en el objetivo, Bloqueo de hechizo listo, la vida del demonio, distancia y agro. /brujo
+## Author: wowforeverplus
+## Version: 1.0.0
+## Category: Class
+## SavedVariables: WarlockGodDB
+## SavedVariablesPerCharacter: WarlockGodCharDB
+## IconTexture: Interface\AddOns\WarlockGod\media\icon
+## X-License: GPL-3.0-or-later
+## X-Curse-Project-ID: 1832594
+
+Locales.lua
+Init.lua
+Gathering.lua
+Reagents.lua
+GroupBuffs.lua
+Repair.lua
+Reminders.lua
+Buffs.lua
+Food.lua
+Demon.lua
+Procs.lua
+Shields.lua
+Wand.lua
+Pulse.lua
+Debuffs.lua
+Interrupt.lua
+Respec.lua
+Range.lua
+MinimapButton.lua
+Options.lua
