@@ -9,7 +9,7 @@
 - 🧾 **Clickable reminders**: Demon Skin or Demon Armor, your healthstone and soulstone (make them, and use the soulstone when it's ready), the Firestone or Spellstone that Forever puts on your weapon, and Find Herbs or Find Minerals out in the world. Click one to cast it
 - 🎯 **Your effects on your target**: Corruption, Immolate, your Bane and Curse, Siphon Life, Fear... small icons with their seconds beside its nameplate
 - ⏳ **Your big cooldowns back**: Death Coil, Howl of Terror, Fel Domination, Inferno, your Soulstone... their icon big in the middle when ready again
-- ✋ **INTERRUPT!** when your target casts and your Felhunter's Spell Lock is ready
+- ✋ **Spell Lock ready**: its icon by your target while it casts something you can stop
 - 🛡️ **Shield bar**: what's left of your Shadow Ward, your Voidwalker's Sacrifice, a protection potion or any other shield on you
 - 🪄 **Wand swing timer**: a bar for your Shoot, dim until the shot comes, with a flash and its seconds
 - 💎 **Soul shard count**: red when you're short, orange when you carry too many
@@ -25,7 +25,7 @@
 - 🧾 **Avisos clicables**: Piel o Armadura demoníaca, la piedra de salud y la de alma (hacerlas, y usar la de alma cuando está lista), la piedra de fuego o de hechizo que Forever pone en el arma, y Buscar hierbas o Buscar minerales fuera de mazmorras. Con un clic se lanza
 - 🎯 **Tus efectos en el objetivo**: Corrupción, Inmolar, tu Bane y tu maldición, Succionar vida, Miedo... iconos pequeños con sus segundos junto a su placa
 - ⏳ **Tus cooldowns gordos de vuelta**: Espiral de la muerte, Aullido de terror, Dominación vil, Inferno, tu Piedra de alma... su icono en grande en el centro cuando vuelven
-- ✋ **¡INTERRUMPE!** cuando tu objetivo lanza algo y el Bloqueo de hechizo de tu manáfago está listo
+- ✋ **Bloqueo de hechizo listo**: su icono junto a tu objetivo mientras lanza algo que se puede cortar
 - 🛡️ **Barra de escudos**: lo que le queda a tu Custodia de las Sombras, al Sacrificio del abisario, a una poción de protección o a cualquier otro escudo que te pongan
 - 🪄 **Barra de la varita**: una barra para tu Disparar, apagada hasta que llega el disparo, con un destello y sus segundos
 - 💎 **Contador de fragmentos de alma**: en rojo cuando te faltan, en naranja cuando llevas demasiados
@@ -50,7 +50,7 @@ Forever hides your buffs, your target's debuffs, your cooldowns, your shields an
 - **Reminders**: a row of icons above your character, each in a thin black frame: grey when something is missing, in colour with its time left in its last minutes. Out of combat, unless you want them in fights too. A stone is only suggested when you have a soul shard to make it; the Firestone and the Spellstone go on the weapon in your main hand.
 - **Your effects on the target**: only yours, and only of the spells you know: Corruption, Immolate, your Bane, your Curse, Siphon Life, Fear, Banish, Howl of Terror and Death Coil, and with their talents Shadow Vulnerability and Demonic Brand. Each group can be switched off; their size is yours.
 - **Cooldowns back**: Death Coil, Howl of Terror, Fel Domination, Amplify Curse, Inferno, Ritual of Doom and your Soulstone's half hour; Soul Fire, Bane of Doom and Shadow Ward too if you want them. Only the spells you know, never for the global cooldown; two at once come one after the other.
-- **INTERRUPT!**: beside your target while it casts something you can stop, with a Felhunter out that knows Spell Lock and Spell Lock ready. Its reach is the Felhunter's, which the addon can't measure.
+- **Spell Lock**: its small icon beside your target while it casts something you can stop, with a Felhunter out that knows Spell Lock and Spell Lock ready. In a fight Forever hides whether a cast can be stopped: then the game itself shows or hides the icon. Its reach is the Felhunter's, which the addon can't measure.
 - **Shield bar**: as wide and tall as you want, flat, with a one-pixel black edge and the shield's icon on its left. Each shield in its colour, the potions in their school's.
 - **Wand**: Shoot's swing timer, as HunterGod's Auto Shot: it shows while you shoot and a moment after, grey when your target is out of reach.
 - **Beside the chat**: a click on the food reminder lists your XP food. Reagents: Infernal Stone and Demonic Figurine (and Soul Shards if you switch the shard count off), not the vendor ones with Reagent Economy; a vendor that sells one you lack says so. Gear under 25% and two free bag slots or fewer, both yours to change; a vendor that repairs tells you how worn your gear is.

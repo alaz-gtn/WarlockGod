@@ -1,3 +1,7 @@
+# 1.0.3
+
+- The Spell Lock warning no longer shows for casts that can't be interrupted. In a fight Forever hides that from addons, so the game itself now shows or hides the icon. It's also smaller: just Spell Lock's icon with a soft glow.
+
 # 1.0.2
 
 - With another class, WarlockGod now shows nothing at all: no reminders, bars, samples or chat lines on top of your other ...God addons. Only its minimap button and its options stay; Move displays says there's nothing to move.

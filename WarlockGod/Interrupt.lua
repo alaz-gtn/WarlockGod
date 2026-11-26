@@ -1,11 +1,13 @@
 local _, ns = ...
 local L = ns.L
 
--- INTERRUPT! beside your target's nameplate while it casts something you can stop and your
--- interrupt is ready. A warlock's is the Felhunter's Spell Lock: so only with a Felhunter out that
--- knows it. Forever lets addons see whether a spell's cooldown is running even in combat; the
--- target's cast may come hidden: then it counts as a cast you can stop, as nothing says otherwise.
--- Spell Lock's reach is the Felhunter's, which the addon can't measure: it doesn't say "in range"
+-- Spell Lock's icon beside your target's nameplate while it casts something you can stop and your
+-- interrupt is ready: small, in a thin black edge, with a soft glow (as MageGod's Counterspell). A
+-- warlock's interrupt is the Felhunter's Spell Lock: so only with a Felhunter out that knows it.
+-- Forever lets addons see whether a spell's cooldown is running even in combat. In a fight it may
+-- hide the target's cast, and whether it can be stopped: then the game itself shows or hides the
+-- icon (SetAlphaFromBoolean on that secret). Spell Lock's reach is the Felhunter's, which the addon
+-- can't measure: it doesn't say "in range"
 local SPELL_LOCK = { 19647, 19244 } -- best first
 local DEFAULT_POINT = { "CENTER", "CENTER", 0, 120 } -- with no nameplate to sit by
 local SIZE = 30
@@ -59,22 +61,27 @@ local function Ready()
 	end
 end
 
--- Is your target casting something you can stop: true, false. A hidden cast counts
+-- Is the target casting? And can it be stopped: true, false, or the game's secret "can't be
+-- stopped" (in a fight Forever may hide it; then the game itself shows or hides the icon). A hidden
+-- spell still counts as a cast
 local function Casting()
 	if not UnitExists("target") then return false end
 	local hostile = UnitCanAttack("player", "target")
 	if not ns.IsSecret(hostile) and not hostile then return false end
-	-- name ... notInterruptible is the 8th for a cast, the 7th for a channel. A hidden value can't
-	-- even be compared with nil: asked first
-	local name, _, _, _, _, _, _, stop = UnitCastingInfo("target")
-	if not ns.IsSecret(name) and name == nil then
-		if not UnitChannelInfo then return false end
-		local _
-		name, _, _, _, _, _, stop = UnitChannelInfo("target")
-		if not ns.IsSecret(name) and name == nil then return false end
+	for _, get in ipairs({ UnitCastingInfo, UnitChannelInfo }) do
+		if get then
+			-- notInterruptible and the cast bar's number sit in different places for the two
+			local name, _, _, _, _, _, a, b, _, d, e = get("target")
+			local notInterruptible, castBar
+			if get == UnitCastingInfo then notInterruptible, castBar = b, d else notInterruptible, castBar = a, e end
+			-- A hidden value can't even be compared with nil: asked first
+			if ns.IsSecret(name) or name ~= nil or (not ns.IsSecret(castBar) and castBar ~= nil) then
+				if ns.IsSecret(notInterruptible) then return true, notInterruptible end
+				return true, notInterruptible ~= true
+			end
+		end
 	end
-	if ns.IsSecret(stop) then return true end
-	return not stop
+	return false
 end
 
 local function TargetPlate()
@@ -98,16 +105,25 @@ end
 
 function ns.UpdateInterrupt()
 	if not frame then return end
-	local show
+	local show, cuttable = false, true
 	if ns.unlocked then
 		show = db.enabled and ns.IsWarlock()
-	else
-		show = db.enabled and ns.IsWarlock() and not ns.Dead() and lock ~= nil and Casting() and Ready() ~= false
+	elseif db.enabled and ns.IsWarlock() and not ns.Dead() and lock ~= nil then
+		local casting
+		casting, cuttable = Casting()
+		-- A secret can't be compared: only a plain "no" hides it here
+		show = casting and (ns.IsSecret(cuttable) or cuttable) and Ready() ~= false
 	end
 	if show then
 		Place()
+		-- Whether it can be stopped, as the game says even when it keeps it from the addon: the game
+		-- shows or hides the icon itself (the secret is "can't be stopped": true hides it)
+		frame.inner:SetAlpha(1)
+		if ns.IsSecret(cuttable) then pcall(frame.inner.SetAlphaFromBoolean, frame.inner, cuttable, 0, 1) end
+		if not frame:IsShown() then frame.glow:Play() end
 		frame:Show()
 	else
+		frame.glow:Stop()
 		frame:Hide()
 		frame.placed = nil
 	end
@@ -135,22 +151,26 @@ events:SetScript("OnEvent", function(self, event)
 		self:UnregisterEvent("PLAYER_LOGIN")
 		db = ns.db.interrupt
 		frame = CreateFrame("Frame", "WarlockGodInterrupt", UIParent)
-		frame:SetSize(SIZE + 120, SIZE)
+		frame:SetSize(SIZE, SIZE)
 		frame:SetFrameStrata("HIGH")
-		frame.edge = frame:CreateTexture(nil, "BACKGROUND")
-		frame.edge:SetPoint("RIGHT")
-		frame.edge:SetSize(SIZE, SIZE)
+		-- What shows, in its own frame: the game may set its see-through for a cast it hides
+		frame.inner = CreateFrame("Frame", nil, frame)
+		frame.inner:SetAllPoints()
+		frame.edge = frame.inner:CreateTexture(nil, "BACKGROUND")
+		frame.edge:SetAllPoints()
 		frame.edge:SetColorTexture(0, 0, 0, 1)
-		frame.icon = frame:CreateTexture(nil, "ARTWORK")
-		frame.icon:SetPoint("TOPLEFT", frame.edge, 1, -1)
-		frame.icon:SetPoint("BOTTOMRIGHT", frame.edge, -1, 1)
+		frame.icon = frame.inner:CreateTexture(nil, "ARTWORK")
+		frame.icon:SetPoint("TOPLEFT", 1, -1)
+		frame.icon:SetPoint("BOTTOMRIGHT", -1, 1)
 		frame.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 		frame.icon:SetTexture(ns.SpellIcon(SPELL_LOCK[2]))
-		frame.text = frame:CreateFontString(nil, "OVERLAY")
-		frame.text:SetPoint("RIGHT", frame.edge, "LEFT", -6, 0)
-		frame.text:SetTextColor(1, 0.4, 0.25)
-		ns.FancyFont(frame.text, 18, "THICKOUTLINE")
-		frame.text:SetText(L.INTERRUPT)
+		-- A soft glow that breathes while you can stop the cast
+		frame.glow = frame:CreateAnimationGroup()
+		frame.glow:SetLooping("BOUNCE")
+		local fade = frame.glow:CreateAnimation("Alpha")
+		fade:SetFromAlpha(1)
+		fade:SetToAlpha(0.6)
+		fade:SetDuration(0.35)
 		frame:Hide()
 		ns.Movable(frame, "interrupt", DEFAULT_POINT, L.INTERRUPT_NAME)
 		table.insert(ns.refreshers, function()
@@ -158,7 +178,8 @@ events:SetScript("OnEvent", function(self, event)
 			ns.UpdateInterrupt()
 		end)
 		for _, e in ipairs({ "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_STOP", "UNIT_SPELLCAST_FAILED",
-			"UNIT_SPELLCAST_INTERRUPTED", "UNIT_SPELLCAST_CHANNEL_START", "UNIT_SPELLCAST_CHANNEL_STOP" }) do
+			"UNIT_SPELLCAST_INTERRUPTED", "UNIT_SPELLCAST_CHANNEL_START", "UNIT_SPELLCAST_CHANNEL_STOP",
+			"UNIT_SPELLCAST_INTERRUPTIBLE", "UNIT_SPELLCAST_NOT_INTERRUPTIBLE" }) do
 			pcall(self.RegisterUnitEvent, self, e, "target")
 		end
 		-- An event the game doesn't have would stop the rest of the file

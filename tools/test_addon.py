@@ -270,6 +270,8 @@ function CreateFrame(kind, name, parent, template)
   -- With a template it has a font; without one it has none until it's given one
   function f:CreateFontString(_, _, template) local t = Texture() t.isFont = true if template then t.font = { template } end return t end
   function f:SetAlpha(a) self.alpha = Unwrap(a) self.hiddenAlpha = issecretvalue(a) end
+  -- The game sets it from a boolean it may keep from the addon: yes when true, no when false
+  function f:SetAlphaFromBoolean(b, yes, no) if Unwrap(b) then self.alpha = yes else self.alpha = no end end
   -- Showing and hiding run the hooks, as the game's OnShow and OnHide do
   local function Became(self, on)
     local was = self.shown
@@ -1301,8 +1303,8 @@ G.Fire("UNIT_SPELLCAST_START", "target")
 check(not iframe.shown, "a demon without Spell Lock: nothing")
 S.petSpells[19244] = True
 G.Fire("PET_BAR_UPDATE")
-check(ns.InterruptState().lock.id == 19244 and iframe.shown and iframe.text.text == L.INTERRUPT and iframe.icon.tex == 19244,
-      "a Felhunter that knows Spell Lock, the target casting: INTERRUPT!")
+check(ns.InterruptState().lock.id == 19244 and iframe.shown and iframe.inner.alpha == 1 and iframe.icon.tex == 19244
+      and iframe.width == 30 and iframe.glow.playing, "a Felhunter that knows Spell Lock, the target casting: its icon, small, glowing")
 G.COOLDOWNS[19244] = lua.table(isActive=True, duration=G.SECRET)
 G.Fire("SPELL_UPDATE_COOLDOWN")
 check(not iframe.shown, "Spell Lock cooling down: nothing")
@@ -1312,9 +1314,19 @@ check(iframe.shown, "ready again")
 S.cast = lua.table("Fireball", True)
 G.Fire("UNIT_SPELLCAST_START", "target")
 check(not iframe.shown, "a cast you can't stop: nothing")
-S.cast = lua.table(G.SECRET, G.SECRET)
+# In a fight the game may hide whether it can be stopped: it shows or hides the icon itself
+S.cast = lua.table(G.SECRET, G.Hidden(True))
 G.Fire("UNIT_SPELLCAST_START", "target")
-check(iframe.shown, "a cast the game hides: it counts as one you can stop")
+check(iframe.shown and iframe.inner.alpha == 0, "a hidden cast that can't be stopped (Throw Bone): the game keeps the icon unseen")
+S.cast = lua.table(G.SECRET, G.Hidden(False))
+G.Fire("UNIT_SPELLCAST_NOT_INTERRUPTIBLE", "target")
+check(iframe.shown and iframe.inner.alpha == 1, "one that can: seen")
+S.cast = lua.table(G.SECRET, G.Hidden(True))
+G.Fire("UNIT_SPELLCAST_NOT_INTERRUPTIBLE", "target")
+check(iframe.inner.alpha == 0, "the cast turning unstoppable: hidden again")
+S.cast = lua.table("Fireball", False)
+G.Fire("UNIT_SPELLCAST_INTERRUPTIBLE", "target")
+check(iframe.shown and iframe.inner.alpha == 1, "and stoppable again: seen")
 S.cast = None
 S.channel = lua.table("Arcane Missiles", False)
 G.Fire("UNIT_SPELLCAST_CHANNEL_START", "target")
