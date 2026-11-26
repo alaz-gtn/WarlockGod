@@ -154,7 +154,11 @@ local function Fill(saved, default)
 	return saved
 end
 
+-- Every ...God addon loads for every class: with another class this one shows nothing, not even in
+-- the chat, unless you ask it something with /warlockgod (ns.answering). The others' own lines
+-- (MageGod's at a vendor...) stay theirs
 function ns.Print(msg)
+	if not ns.IsWarlock() and not ns.answering then return end
 	print(L.PREFIX .. msg)
 end
 
@@ -363,6 +367,12 @@ function ns.Movable(frame, key, defaultPoint, label)
 end
 
 function ns.SetUnlocked(on)
+	-- Another class: nothing of this addon's on screen, so nothing to move
+	if not ns.IsWarlock() then
+		ns.unlocked = false
+		print(L.PREFIX .. L.ONLY_WARLOCK)
+		return
+	end
 	if InCombatLockdown() then
 		ns.Print(L.NOT_IN_COMBAT)
 		return
@@ -404,11 +414,11 @@ SlashCmdList.WARLOCKGOD = function(msg)
 		return
 	end
 	local command = ns.commands[word]
-	if command then
-		command(word)
-	else
-		Help()
-	end
+	-- What you ask gets its answer in the chat, whatever your class
+	ns.answering = true
+	local ok, err = pcall(command or Help, word)
+	ns.answering = false
+	if not ok then error(err, 0) end
 end
 
 -- Settings saved by an older version, brought up to date

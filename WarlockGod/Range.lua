@@ -558,6 +558,9 @@ driver:SetScript("OnEvent", function(self, event, unit, _, spellID)
 	self:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
 	ns.Movable(rangeSpot, "range", { "CENTER", "CENTER", 0, -140 }, L.TAB_RANGE)
 	ns.Movable(threatSpot, "threat", { "CENTER", "CENTER", 0, -200 }, L.THREAT_NAME) -- clear of the range's box
+	-- Another class: nothing of this addon's on screen, not even these empty spots
+	rangeSpot:SetShown(ns.IsWarlock())
+	threatSpot:SetShown(ns.IsWarlock())
 	Anchor(nil)
 	ns.StyleRange()
 	table.insert(ns.refreshers, function()

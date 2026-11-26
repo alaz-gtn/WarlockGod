@@ -1,3 +1,7 @@
+# 1.0.2
+
+- With another class, WarlockGod now shows nothing at all: no reminders, bars, samples or chat lines on top of your other ...God addons. Only its minimap button and its options stay; Move displays says there's nothing to move.
+
 # 1.0.1
 
 - Fixed Lua errors on login: some texts were written before they had a font.

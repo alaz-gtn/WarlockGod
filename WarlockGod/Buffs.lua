@@ -214,7 +214,7 @@ function ns.UpdateBuffs()
 	for _, s in ipairs(STATES) do
 		local r
 		if ns.unlocked then
-			r = db.enabled and s.on() and SAMPLES[s.key]()
+			r = ns.IsWarlock() and db.enabled and s.on() and SAMPLES[s.key]()
 		elseif warlock and db.enabled and not quiet and s.on() then
 			r = s.get()
 		end

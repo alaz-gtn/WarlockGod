@@ -9,6 +9,7 @@ local L = {
 	NOT_IN_COMBAT = "not in combat: try again when the fight is over.",
 	UNLOCKED = "displays unlocked: drag them where you want them. /warlockgod lock when you're done.",
 	LOCKED = "displays locked.",
+	ONLY_WARLOCK = "WarlockGod only shows for warlocks: nothing to move on this character.",
 
 	-- Reminders
 	REMINDERS_NAME = "Reminders",
@@ -268,6 +269,7 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 	L.NOT_IN_COMBAT = "no en combate: vuelve a probar cuando acabe la pelea."
 	L.UNLOCKED = "avisos desbloqueados: arrástralos donde quieras. /brujo bloquear cuando acabes."
 	L.LOCKED = "avisos bloqueados."
+	L.ONLY_WARLOCK = "WarlockGod solo sale con brujos: en este personaje no hay nada que mover."
 
 	L.REMINDERS_NAME = "Avisos"
 	L.CLICK_CAST = "Clic: lanzarlo"

@@ -461,6 +461,7 @@ function ns.StyleProcs()
 	else
 		place:SetSize(width * scale, HEIGHT * scale)
 		ns.PlaceFrame(place)
+		place:SetShown(ns.IsWarlock()) -- another class: nothing of this addon's on screen
 		if place.mover then place.mover:SetSize(width * scale + 16, HEIGHT * scale + 16) end
 		for _, e in ipairs(EFFECTS) do
 			if e.holder then

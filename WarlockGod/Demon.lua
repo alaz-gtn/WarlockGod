@@ -113,7 +113,7 @@ function ns.UpdateDemon()
 	for _, s in ipairs(STATES) do
 		local r
 		if ns.unlocked then
-			r = s.on() and SAMPLES[s.key]()
+			r = ns.IsWarlock() and s.on() and SAMPLES[s.key]()
 		elseif warlock and s.on() then
 			r = s.get()
 		end
@@ -199,7 +199,7 @@ end
 function ns.UpdateDemonHealth()
 	if not hurt or not db then return end
 	local percent, hidden
-	if ns.unlocked and db.health then
+	if ns.unlocked and db.health and ns.IsWarlock() then
 		percent = 25
 	elseif db.health and ns.IsWarlock() and HasDemon() then
 		local health, maxHealth = UnitHealth("pet"), UnitHealthMax("pet")

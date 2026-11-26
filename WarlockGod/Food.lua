@@ -259,6 +259,7 @@ end
 
 -- The reagents to show: out of combat, and not the Soul Shards while the shard count says it already
 local function LowReagents()
+	if not ns.IsWarlock() then return {} end
 	if ns.unlocked then
 		if not ns.db.reagents.enabled then return {} end
 		local name = ns.ItemName(5565) or "Infernal Stone"
@@ -274,6 +275,8 @@ end
 
 -- Your gear wearing out and your bags filling up (Repair.lua, the family's), under the reagents
 local function RepairRows()
+	-- Another class: nothing, even though the family's file works it out for every class
+	if not ns.IsWarlock() then return {} end
 	if ns.unlocked then
 		if not ns.db.repair.enabled then return {} end
 		return { { key = "repair", icon = "Interface\\Icons\\Trade_BlackSmithing", text = format(ns.REPAIR_TEXT.WORN, 18) } }
@@ -284,7 +287,7 @@ end
 
 function ns.UpdateFood()
 	if not ready then return end
-	local food = ns.unlocked and ns.db.food.enabled or not ns.unlocked and Missing()
+	local food = ns.IsWarlock() and (ns.unlocked and ns.db.food.enabled or not ns.unlocked and Missing())
 	local reagents = LowReagents()
 	-- The repair and bag rows follow the reagents', each with its own picture
 	for _, r in ipairs(RepairRows()) do reagents[#reagents + 1] = { icon = r.icon, text = r.text, count = 1 } end

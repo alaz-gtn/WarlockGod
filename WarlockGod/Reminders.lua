@@ -168,7 +168,10 @@ pcall(events.RegisterEvent, events, "UI_SCALE_CHANGED")
 pcall(events.RegisterEvent, events, "DISPLAY_SIZE_CHANGED")
 events:SetScript("OnEvent", function(_, event)
 	if event == "PLAYER_LOGIN" or event == "UI_SCALE_CHANGED" or event == "DISPLAY_SIZE_CHANGED" then
-		if event == "PLAYER_LOGIN" then ns.Movable(group, "reminders", DEFAULT_POINT, L.REMINDERS_NAME) end
+		if event == "PLAYER_LOGIN" then
+			ns.Movable(group, "reminders", DEFAULT_POINT, L.REMINDERS_NAME)
+			group:SetShown(ns.IsWarlock()) -- another class: nothing of this addon's on screen
+		end
 		for _, frame in ipairs(styled) do Edges(frame) end
 	elseif event == "PLAYER_REGEN_DISABLED" then
 		-- The last moment the game lets them go: no hidden button left to click in the fight

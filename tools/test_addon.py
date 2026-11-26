@@ -17,7 +17,7 @@ printed = []
 lua.globals().py_print = lambda *a: printed.append(" ".join(str(x) for x in a))
 lua.globals().LOCALE = LOCALE
 
-lua.execute(r'''
+MOCK = r'''
 print = function(...) local t = {} for i = 1, select("#", ...) do t[#t+1] = tostring((select(i, ...))) end py_print(table.concat(t, " ")) end
 format = string.format; strlower = string.lower; strupper = string.upper; max = math.max; min = math.min; abs = math.abs; floor = math.floor; ceil = math.ceil
 strtrim = function(s) return (s:gsub("^%s+", ""):gsub("%s+$", "")) end
@@ -242,6 +242,19 @@ local function Texture() local t = { shown = true } setmetatable(t, { __index = 
   elseif k == "CreateAnimationGroup" then return CreateFrame("Frame") end
 end end }) return t end
 NAMED = {}
+-- Secure frames, and what an addon tried to do to them in a fight
+SECURE, BLOCKED = {}, {}
+function Protected(frame)
+  for _, s in ipairs(SECURE) do
+    local p = s
+    while p do
+      if rawequal(p, frame) then return true end
+      p = rawget(p, "parent")
+    end
+  end
+  return false
+end
+
 function CreateFrame(kind, name, parent, template)
   local f = { scripts = {}, events = {}, kind = kind, parent = parent, template = template, shown = true, attrs = {}, width = 100 }
   setmetatable(f, { __index = function(_, k)
@@ -323,6 +336,23 @@ function CreateFrame(kind, name, parent, template)
   end
   FRAMES = FRAMES or {} table.insert(FRAMES, f)
   if name then NAMED[name] = f end
+  -- As in the game: in a fight a secure button, and any frame holding one, can't be shown, hidden,
+  -- moved or changed by an addon (the game blocks it). Recorded in BLOCKED, the tests fail on it
+  if type(template) == "string" and template:find("Secure") then SECURE[#SECURE + 1] = f end
+  for _, method in ipairs({ "Show", "Hide", "SetShown", "SetAttribute", "SetPoint", "ClearAllPoints", "SetParent", "SetSize" }) do
+    local orig = rawget(f, method)
+    if orig then
+      f[method] = function(self, ...)
+        if InCombatLockdown() and not ENTERING_COMBAT and Protected(self) then
+          local info = debug.getinfo(2, "Sl")
+          if info and info.source:sub(1, 1) == "@" then
+            BLOCKED[#BLOCKED + 1] = info.source:sub(2) .. ":" .. tostring(info.currentline) .. " " .. method .. " on " .. tostring(name or "a secure frame")
+          end
+        end
+        return orig(self, ...)
+      end
+    end
+  end
   return f
 end
 -- Font objects: one per name, the last font set on it counts
@@ -373,7 +403,30 @@ end
 function Same(a, b) return rawequal(a, b) end
 function Fire(event, ...) for _, f in ipairs(FRAMES) do if f.events[event] and f.scripts.OnEvent then f.scripts.OnEvent(f, event, ...) end end end
 function Tick() for _, f in ipairs(TICKERS or {}) do f() end end
-''')
+'''
+lua.execute(MOCK)
+
+MOCK_GUARDS = '''
+-- PLAYER_REGEN_DISABLED is the last moment the game lets an addon change its secure buttons
+ENTERING_COMBAT = false
+local fire = Fire
+Fire = function(event, ...)
+  ENTERING_COMBAT = event == "PLAYER_REGEN_DISABLED"
+  fire(event, ...)
+  ENTERING_COMBAT = false
+end
+-- Globals an addon file leaves behind: only its own name's, SLASH_ and BINDING_ are fine
+LEAKS = {}
+setmetatable(_G, { __newindex = function(t, k, v)
+  local info = debug.getinfo(2, "Sl")
+  if info and info.source:sub(1, 1) == "@" and type(k) == "string" and not k:find("^WarlockGod")
+    and not k:find("^SLASH_") and not k:find("^BINDING_") then
+    LEAKS[#LEAKS + 1] = info.source:sub(2) .. ":" .. tostring(info.currentline) .. " " .. k
+  end
+  rawset(t, k, v)
+end })
+'''
+lua.execute(MOCK_GUARDS)
 
 load = lua.eval('function(src, name) return assert(loadstring(src, "@" .. name)) end')
 ns = lua.table()
@@ -1472,6 +1525,110 @@ G.Fire("GOSSIP_SHOW")
 check(not rnote.shown, "another class: not this addon's trainer")
 S["class"] = "WARLOCK"
 
+
+# ---------------------------------------------------------------- Another class: nothing on screen
+# Every ...God addon loads for every class. A fresh login as a mage, with every reason to remind
+# something (no food buff, two free bag slots, worn gear, a reagent run out, a group that lacks a
+# buff, a herbalist with no tracking on, a demon hurt, a shield, a target casting, a wand shooting):
+# WarlockGod draws nothing, says nothing in the chat, and has nothing to move. Only its minimap
+# button and its options
+mage = LuaRuntime(unpack_returned_tuples=True)
+mage.globals().py_print = lambda *a: printed.append(" ".join(str(x) for x in a))
+mage.globals().LOCALE = LOCALE
+mage.execute(MOCK)
+mage.execute(MOCK_GUARDS)
+mage.execute('''
+SPELLS[1459] = "Arcane Intellect"
+SPELLS[3561] = "Teleport: Stormwind"
+ITEM_NAMES[17031] = "Rune of Teleportation"
+G.class = "MAGE"
+for _, id in ipairs({ 1459, 3561, 2383, 686, 687, 706, 688, 697, 6201, 693, 2362, 5019, 18094 }) do G.known[id] = true end
+G.durability[16] = { 5, 100 }
+G.freeSlots = { [0] = 2, [1] = 0, [2] = 0, [3] = 0, [4] = 0 }
+G.group, G.party = true, { true }
+G.tracking = { { name = "Find Herbs", spellID = 2383, active = false } }
+G.pet, G.petHealth = true, 10
+G.petSpells[19244] = true
+G.absorb = 500
+G.target, G.dist = { hostile = true }, 22
+G.cast = { "Fireball", false }
+G.wand = 950
+G.items[6265] = 0
+G.canRepair = true
+MERCHANT = { 17031 }
+function VisibleFrames()
+  local out = {}
+  for name, f in pairs(NAMED) do
+    local p, seen = f, true
+    while p do
+      if not rawget(p, "shown") then seen = false break end
+      p = rawget(p, "parent")
+    end
+    if seen and not name:find("Minimap") and not name:find("Options") then out[#out + 1] = name end
+  end
+  table.sort(out)
+  return out
+end
+''')
+mns = mage.table()
+mload = mage.eval('function(src, name) return assert(loadstring(src, "@" .. name)) end')
+for fname in re.findall(r"^(\w+\.lua)$", toc, re.M):
+    mload(Path(ADDON, fname).read_text(encoding="utf-8"), fname)("WarlockGod", mns)
+M = mage.globals()
+printed.clear()
+M.Fire("ADDON_LOADED", "WarlockGod")
+M.Fire("PLAYER_LOGIN")
+for ev in ("SPELLS_CHANGED", "BAG_UPDATE_DELAYED", "GROUP_ROSTER_UPDATE", "UPDATE_INVENTORY_DURABILITY",
+           "MINIMAP_UPDATE_TRACKING", "PLAYER_REGEN_ENABLED", "PLAYER_TARGET_CHANGED", "PET_BAR_UPDATE",
+           "MERCHANT_SHOW"):
+    M.Fire(ev)
+M.Fire("UNIT_AURA", "player")
+M.Fire("UNIT_PET", "player")
+M.Fire("UNIT_HEALTH", "pet")
+M.Fire("UNIT_SPELLCAST_START", "target")
+M.Fire("START_AUTOREPEAT_SPELL")
+M.Fire("PLAYER_SWING", 1.6, 2)
+M.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", 6229)
+M.RunTimers()
+M.Tick()
+mns.RefreshAll()
+shown = list(M.VisibleFrames().values())
+check(not shown, f"a mage logged in: nothing of WarlockGod's on screen: {shown}")
+check(M.NAMED["WarlockGodMinimapButton"].shown, "only its minimap button")
+check(not printed, f"and nothing in the chat (a vendor, a repair...): {printed}")
+mmembers = mns.RemindersState()[1]
+check(all(not m.click.shown for m in mmembers.values()), "no button to click either")
+# Moving the displays: nothing to move
+printed.clear()
+mns.SetUnlocked(True)
+check(not mns.unlocked and printed == [mns.L.PREFIX + mns.L.ONLY_WARLOCK], f"Move displays: it says there's nothing to move: {printed}")
+shown = list(M.VisibleFrames().values())
+check(not shown, f"and shows nothing: {shown}")
+# Even if the addon were unlocked anyway: no sample of anything
+mns.unlocked = True
+mns.RefreshAll()
+for f in M.FRAMES.values():
+    if f.scripts.OnUpdate:
+        f.scripts.OnUpdate(f, 0.3)
+shown = list(M.VisibleFrames().values())
+check(not shown, f"unlocked anyway: still nothing: {shown}")
+mns.unlocked = False
+mns.RefreshAll()
+# What you ask still gets its answer
+out = []
+printed.clear()
+M.SlashCmdList.WARLOCKGOD("bufos" if es else "buffs")
+check(len(printed) >= 1, f"a command you type still answers in the chat: {printed[:1]}")
+blocked = sorted(set(M.BLOCKED.values()))
+check(not blocked, f"the mage's login touched nothing secure in a fight: {blocked}")
+leaks = sorted(set(M.LEAKS.values()))
+check(not leaks, f"nor left globals behind: {leaks}")
+
 print()
+blocked = sorted(set(G.BLOCKED.values()))
+check(not blocked, f"nothing secure touched in a fight (the game blocks it): {blocked}")
+leaks = sorted(set(G.LEAKS.values()))
+check(not leaks, f"no globals left behind: {leaks}")
+
 print("FAILURES:" if fails else f"All good ({LOCALE}).", fails if fails else "")
 sys.exit(1 if fails else 0)

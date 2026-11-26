@@ -11,12 +11,12 @@ local _, ns = ...
 -- to PaladinGod, which chooses them by class
 local GROUP_BUFFS = {
 	MAGE = {
-		{ key = "intellect", cast = { 1459, 1460, 1461, 10156, 10157 }, also = { 23028 } }, -- Arcane Intellect, Brilliance
+		{ key = "intellect", cast = { 1459, 1460, 1461, 10156, 10157 }, also = { 23028 }, mana = true }, -- Arcane Intellect, Brilliance
 	},
 	PRIEST = {
 		{ key = "fortitude", cast = { 1243, 1244, 1245, 2791, 10937, 10938 }, also = { 21562, 21564 } }, -- Prayer of Fortitude
 		{ key = "shadow", cast = { 976, 10957, 10958 }, also = { 27683 } }, -- Shadow Protection, its prayer
-		{ key = "spirit", cast = { 14752, 14818, 14819, 27841 }, also = { 27681 } }, -- Divine Spirit (talent), its prayer
+		{ key = "spirit", cast = { 14752, 14818, 14819, 27841 }, also = { 27681 }, mana = true }, -- Divine Spirit (talent), its prayer
 	},
 	DRUID = {
 		{ key = "mark", cast = { 1126, 5232, 6756, 5234, 8907, 9884, 9885 }, also = { 21849, 21850 } }, -- Mark, Gift of the Wild
@@ -33,6 +33,9 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 	T.CLICK = "Clic: lanzárselo a %s"
 end
 ns.GROUP_BUFF_TEXT = T
+
+-- Classes with no mana: Intellect and Spirit do nothing for them, so they aren't counted
+local NO_MANA = { WARRIOR = true, ROGUE = true }
 
 local cache
 
@@ -124,7 +127,9 @@ local function Work()
 			for _, id in ipairs(b.also) do accepted[SpellName(id) or ""] = true end
 			local missing, first = 0, nil
 			for _, unit in ipairs(members) do
-				local names = BuffNames(unit)
+				local _, unitClass = UnitClass(unit)
+				local useless = b.mana and not IsSecret(unitClass) and NO_MANA[unitClass]
+				local names = not useless and BuffNames(unit)
 				if names then
 					local has = false
 					for name in pairs(accepted) do
