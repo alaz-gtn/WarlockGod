@@ -2,8 +2,10 @@ local _, ns = ...
 
 -- In a group, the buffs of yours someone is missing: Arcane Intellect, Power Word: Fortitude,
 -- Shadow Protection, Divine Spirit, Mark of the Wild. Out of combat only (that's when buffs are
--- given, and when the game shows other players' buffs to addons). Each one says how many lack it,
--- and a click casts it on the first of them who is in range; the next click, on the next.
+-- given, and when the game shows other players' buffs to addons). Only those you can buff now count:
+-- in range, alive and online (a party member in another city isn't nagged about). Each one says
+-- how many lack it, and a click casts it on the first of them; the next click, on the next.
+-- Looked at again every couple of seconds while you're in a group, as people come and go.
 -- Its group version counts too (Arcane Brilliance, the prayers, Gift of the Wild). You yourself
 -- are left out: each addon reminds you of your own buffs already.
 -- The same file in every ...God addon: each one shows ns.GroupBuffReminders() in its own row and
@@ -98,6 +100,9 @@ local function BuffNames(unit)
 end
 
 local function Reachable(unit, spell)
+	-- Far away (another zone, out of sight): the game says so before any range check
+	local visible = not UnitIsVisible or UnitIsVisible(unit)
+	if not IsSecret(visible) and not visible then return false end
 	local dead = UnitIsDeadOrGhost and UnitIsDeadOrGhost(unit)
 	if dead and not IsSecret(dead) then return false end
 	local online = not UnitIsConnected or UnitIsConnected(unit)
@@ -129,7 +134,7 @@ local function Work()
 			for _, unit in ipairs(members) do
 				local _, unitClass = UnitClass(unit)
 				local useless = b.mana and not IsSecret(unitClass) and NO_MANA[unitClass]
-				local names = not useless and BuffNames(unit)
+				local names = not useless and Reachable(unit, spell) and BuffNames(unit)
 				if names then
 					local has = false
 					for name in pairs(accepted) do
@@ -137,7 +142,7 @@ local function Work()
 					end
 					if not has then
 						missing = missing + 1
-						if not first and Reachable(unit, spell) then first = unit end
+						first = first or unit
 					end
 				end
 			end
@@ -151,7 +156,7 @@ local function Work()
 	return list
 end
 
--- Your group's missing buffs: { key, spell, icon, count, unit (the first in range, or nil), text, click }
+-- Your group's missing buffs, among those in range: { key, spell, icon, count, unit (the first), text, click }
 function ns.GroupBuffReminders()
 	if not cache then cache = Work() end
 	return cache
@@ -167,9 +172,37 @@ for _, event in ipairs({ "PLAYER_LOGIN", "GROUP_ROSTER_UPDATE", "SPELLS_CHANGED"
 	"PLAYER_REGEN_DISABLED", "UNIT_AURA", "UNIT_CONNECTION" }) do
 	pcall(events.RegisterEvent, events, event) -- an event the game doesn't have would stop the file
 end
+-- In a group and out of combat, a look every couple of seconds: people walk in and out of range,
+-- and the game says nothing when they do. Only a change is passed on
+local SWEEP = 2
+local sweeper = CreateFrame("Frame")
+sweeper:Hide()
+local waited = 0
+local function Signature(list)
+	local parts = {}
+	for _, r in ipairs(list) do parts[#parts + 1] = r.key .. r.count .. tostring(r.unit) end
+	return table.concat(parts, ",")
+end
+sweeper:SetScript("OnUpdate", function(_, elapsed)
+	waited = waited + elapsed
+	if waited < SWEEP then return end
+	waited = 0
+	local before = Signature(ns.GroupBuffReminders())
+	cache = nil
+	if Signature(ns.GroupBuffReminders()) ~= before and ns.db and ns.GroupBuffsChanged then ns.GroupBuffsChanged() end
+end)
+ns.GroupBuffSweeper = sweeper -- for the tests
+local function Sweep()
+	local grouped = IsInGroup and IsInGroup()
+	local fighting = InCombatLockdown and InCombatLockdown()
+	local _, class = UnitClass("player")
+	sweeper:SetShown(grouped and not fighting and GROUP_BUFFS[class] ~= nil and true or false)
+end
+
 events:SetScript("OnEvent", function(_, event, unit)
 	-- Only your group's buffs matter here
 	if (event == "UNIT_AURA" or event == "UNIT_CONNECTION") and type(unit) == "string"
 		and not (unit:find("^party") or unit:find("^raid")) then return end
 	ns.RefreshGroupBuffs()
+	Sweep()
 end)
