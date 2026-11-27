@@ -600,6 +600,8 @@ local function Build()
 		function(v) db.repair.low = v ns.RefreshRepair() end)
 	y = Slider(page, y, L.OPT_REPAIR_BAGS, 0, 10, 1, function() return db.repair.bags end,
 		function(v) db.repair.bags = v ns.RefreshRepair() end)
+	y = Check(page, y, ns.REPAIR_TEXT.OPT_AUTO, function() return db.repair.auto end, function(v) db.repair.auto = v end,
+		"Interface\\Icons\\INV_Misc_Coin_02")
 	y = Section(page, y, L.SEC_GROUP_BUFFS)
 	y = Check(page, y, L.OPT_GROUP_BUFFS, function() return db.groupBuffs.enabled end,
 		function(v) db.groupBuffs.enabled = v ns.RefreshGroupBuffs() end)
@@ -607,6 +609,7 @@ local function Build()
 	y = Section(page, y, L.SEC_REAGENTS)
 	y = Check(page, y, L.OPT_REAGENTS, function() return db.reagents.enabled end,
 		function(v) db.reagents.enabled = v ns.RefreshReagents() end, ns.ItemIcon(5565))
+	y = Check(page, y, ns.REAGENT_TEXT.OPT_BUY, function() return db.reagents.buy end, function(v) db.reagents.buy = v end)
 	y = Hint(page, y, L.REAGENTS_HINT)
 	local barrier = db.barrier
 	local function BarrierChanged()

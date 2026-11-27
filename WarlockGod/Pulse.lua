@@ -203,8 +203,12 @@ local function Check(w)
 	local stale = w.blind and now - w.blind > 1
 	w.blind = nil
 	if cooling then
+		local own = not w.own and Own(w, info)
+		if own then w.own = true end
+		-- Only the global cooldown, as the game says: its time doesn't count. Spells cast one after
+		-- another chain them for longer than any one, and that isn't the spell's own coming back
+		if own == false and not w.own then w.since = now end
 		if not w.since then w.since = now end
-		if not w.own and Own(w, info) then w.own = true end
 	elseif w.since then
 		if not stale and (w.own or now - w.since > GCD_MAX) and db.enabled and db.spells[w.key] and ns.IsWarlock()
 			and not ns.Dead() then

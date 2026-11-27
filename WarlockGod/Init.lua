@@ -92,9 +92,9 @@ local defaults = {
 	-- Your buffs someone in your group lacks (GroupBuffs.lua: a warlock has none, the file is the family's)
 	groupBuffs = { enabled = true },
 	-- Gear under this % and bags with this many free slots or fewer, beside the chat (Repair.lua)
-	repair = { enabled = true, low = 25, bags = 2 },
+	repair = { enabled = true, low = 25, bags = 2, auto = false },
 	-- Reagents running low, beside the chat with the food reminder (Reagents.lua)
-	reagents = { enabled = true },
+	reagents = { enabled = true, buy = false },
 	-- Herbalism or Mining without its tracking on, out in the world (Gathering.lua)
 	gather = { enabled = true },
 	-- Small and faint by default, as HunterGod's since 1.5.1: the family's line
