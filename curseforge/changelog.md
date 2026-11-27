@@ -1,3 +1,7 @@
+# 1.2.0
+
+- **Reagent vendors on the world map**: the vendors who sell the reagents of the spells you know (Infernal Stones, Demonic Figurines), only your faction's, each pin with the reagent's icon. Hover one for what it has of yours and how many you carry; click it for a waypoint (TomTom's if you have it). None with Reagent Economy. An option in the reagents section turns it off. Data from QuestieDB. If you update with the game open, restart it: the addon brings a new Libs folder.
+
 # 1.1.0
 
 - **Repair at a merchant** (an option, off by default): talking to a merchant who repairs fixes everything you wear and carry with your money, and says in the chat what it cost; without enough money it says so. Only this class's addon does it, so with every ...God addon on you pay once.

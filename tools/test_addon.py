@@ -1788,6 +1788,74 @@ if r:
     S.merchant = lua.table()
     G.Fire("BAG_UPDATE_DELAYED")
 
+# ---------------------------------------------------------------- Reagent vendors on the world map (shared files)
+# (ClassGods/test_reagentmap_block.py: the same block in every ...God harness that spends reagents)
+lua.execute('''
+HBD_PINS_WORLDMAP_SHOW_PARENT = 1
+local pinsLib = {
+  AddWorldMapIconMap = function(_, ref, pin, m, x, y) G.mapPins = (G.mapPins or 0) + 1 G.lastPin = pin end,
+  RemoveAllWorldMapIcons = function() G.mapPins = 0 end,
+}
+LibStub = setmetatable({}, { __call = function(_, name) if name == "HereBeDragons-Pins-2.0" then return pinsLib end end })
+UnitFactionGroup = function() return G.faction or "Alliance" end
+''')
+MT = ns.REAGENT_MAP_TEXT
+me = {"MageGod": "MAGE", "PriestGod": "PRIEST", "DruidGod": "DRUID", "PaladinGod": "PALADIN", "RogueGod": "ROGUE",
+      "ShamanGod": "SHAMAN", "WarlockGod": "WARLOCK"}[Path(ADDON).resolve().name]
+S["class"] = me
+own = ns.REAGENTS[me]
+r = None
+for i in range(1, len(own) + 1):
+    if own[i].vendor and G.C_Spell.GetSpellName(own[i].spells[1]):
+        r = own[i]
+        break
+check(db.reagents.map is True and MT.OPT_MAP, "reagent vendors on the map: an option, on by default")
+for i in range(1, len(own) + 1):
+    for j in range(1, len(own[i].spells) + 1):
+        S.known[own[i].spells[j]] = None
+G.Fire("SPELLS_CHANGED")
+ns.RefreshReagentMap()
+check(S.mapPins == 0, f"none of its spells known: no vendors on the map ({S.mapPins})")
+know(r.spells[1])
+G.Fire("SPELLS_CHANGED")
+vendors = ns.REAGENT_VENDORS
+
+
+def expected(side):
+    n = 0
+    for _, v in vendors.items():
+        sells = any(v["items"][k] == r.item for k in range(1, len(v["items"]) + 1))
+        if sells and v.side in (side, "B"):
+            n += 1
+    return n
+
+
+S.faction = "Alliance"
+ns.RefreshReagentMap()
+check(S.mapPins == expected("A") and S.mapPins > 0, f"its spell known: the Alliance vendors of {r.item} ({S.mapPins})")
+pin = S.lastPin
+check(pin["items"][1] == r.item, "the pin is that reagent")
+S.faction = "Horde"
+ns.RefreshReagentMap()
+check(S.mapPins == expected("H") and S.mapPins > 0, f"a Horde character: the Horde ones ({S.mapPins})")
+S.faction = None
+db.reagents.map = False
+ns.RefreshReagentMap()
+check(S.mapPins == 0, "turned off: none")
+db.reagents.map = True
+S["class"] = "HUNTER"
+ns.RefreshReagentMap()
+check(S.mapPins == 0, "another class: this addon draws none")
+S["class"] = me
+S.known[1225503] = True
+G.Fire("SPELLS_CHANGED")
+ns.RefreshReagentMap()
+check(S.mapPins == 0, "with Reagent Economy: none")
+S.known[1225503] = None
+know(r.spells[1], on=False)
+G.Fire("SPELLS_CHANGED")
+lua.execute("LibStub = nil")
+
 check(not blocked, f"nothing secure touched in a fight (the game blocks it): {blocked}")
 leaks = sorted(set(G.LEAKS.values()))
 check(not leaks, f"no globals left behind: {leaks}")

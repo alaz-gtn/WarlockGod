@@ -610,6 +610,7 @@ local function Build()
 	y = Check(page, y, L.OPT_REAGENTS, function() return db.reagents.enabled end,
 		function(v) db.reagents.enabled = v ns.RefreshReagents() end, ns.ItemIcon(5565))
 	y = Check(page, y, ns.REAGENT_TEXT.OPT_BUY, function() return db.reagents.buy end, function(v) db.reagents.buy = v end)
+	y = Check(page, y, ns.REAGENT_MAP_TEXT.OPT_MAP, function() return db.reagents.map end, function(v) db.reagents.map = v ns.RefreshReagentMap() end)
 	y = Hint(page, y, L.REAGENTS_HINT)
 	local barrier = db.barrier
 	local function BarrierChanged()

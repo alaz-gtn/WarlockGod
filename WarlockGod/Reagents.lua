@@ -203,6 +203,19 @@ local function Work()
 	return list, short
 end
 
+-- The vendor reagents you spend now, for the map of their vendors: item = true. None with Reagent
+-- Economy, which does away with them
+function ns.ReagentsYouSpend()
+	local _, class = UnitClass("player")
+	local own = REAGENTS[class]
+	local list = {}
+	if not own or HasEconomy() then return list end
+	for _, r in ipairs(own) do
+		if r.vendor and #Known(r.spells, own) > 0 then list[r.item] = true end
+	end
+	return list
+end
+
 -- Your reagents running low: { item, count, name, text, uses }
 function ns.ReagentReminders()
 	if not cache then cache, toBuy = Work() end
