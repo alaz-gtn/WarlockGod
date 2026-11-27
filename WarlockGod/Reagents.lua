@@ -9,14 +9,14 @@ local addonName, ns = ...
 -- The same file in every ...God addon: each one shows ns.ReagentReminders() in its own list and
 -- sets ns.ReagentsChanged to hear when that may have changed
 local ECONOMY = { 1225503, 1262636, 1262638, 1262643, 1262647, 1262650, 1262654, 1262662 } -- Reagent Economy
--- item: the reagent; stock: how many to buy up to; low: a reminder under this many; vendor: sold by vendors (Reagent Economy does
+-- item: the reagent; stock: how many to buy up to; low: a reminder under this many (6: with 5 or fewer); vendor: sold by vendors (Reagent Economy does
 -- away with it); spells: what spends it; next: the reagent of a better rank, which takes over
 local REAGENTS = {
 	MAGE = {
-		{ item = 17031, stock = 10, low = 3, vendor = true, spells = { 3561, 3562, 3563, 3565, 3566, 3567 } }, -- Rune of Teleportation
-		{ item = 17032, stock = 10, low = 3, vendor = true, spells = { 10059, 11416, 11417, 11418, 11419, 11420 } }, -- Rune of Portals
+		{ item = 17031, stock = 10, low = 6, vendor = true, spells = { 3561, 3562, 3563, 3565, 3566, 3567 } }, -- Rune of Teleportation
+		{ item = 17032, stock = 10, low = 6, vendor = true, spells = { 10059, 11416, 11417, 11418, 11419, 11420 } }, -- Rune of Portals
 		{ item = 17020, stock = 20, low = 10, vendor = true, spells = { 23028 } }, -- Arcane Powder: Arcane Brilliance
-		{ item = 17056, stock = 20, low = 5, vendor = true, spells = { 130 } }, -- Light Feather: Slow Fall
+		{ item = 17056, stock = 20, low = 6, vendor = true, spells = { 130 } }, -- Light Feather: Slow Fall
 	},
 	ROGUE = {
 		{ item = 5140, stock = 20, low = 5, vendor = true, spells = { 1856, 1857 } }, -- Flash Powder: Vanish
@@ -25,7 +25,7 @@ local REAGENTS = {
 	PRIEST = {
 		{ item = 17028, stock = 20, low = 5, vendor = true, spells = { 21562 }, next = 17029 }, -- Holy Candle: Prayer of Fortitude 1
 		{ item = 17029, stock = 20, low = 5, vendor = true, spells = { 21564, 27681, 27683 } }, -- Sacred Candle: the prayers
-		{ item = 17056, stock = 20, low = 5, vendor = true, spells = { 1706 } }, -- Light Feather: Levitate
+		{ item = 17056, stock = 20, low = 6, vendor = true, spells = { 1706 } }, -- Light Feather: Levitate
 	},
 	DRUID = {
 		{ item = 17034, stock = 5, low = 2, vendor = true, spells = { 20484 }, next = 17035 }, -- Maple Seed: Rebirth 1
