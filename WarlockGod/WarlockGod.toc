@@ -4,7 +4,7 @@
 ## Notes-esES: Mejoras para brujos: avisos clicables de demonio, Enlace de alma, armadura, piedra de salud, de alma y del arma y rastreo de recolección, contador de fragmentos de alma, animaciones pequeñas para Trance de las Sombras, Cosecha de almas, Diezmar y Sombra y llama, barra de escudos, barra de golpe de la varita, cooldowns que vuelven, tus efectos en el objetivo, Bloqueo de hechizo listo, la vida del demonio, distancia y agro. /brujo
 ## Notes-esMX: Mejoras para brujos: avisos clicables de demonio, Enlace de alma, armadura, piedra de salud, de alma y del arma y rastreo de recolección, contador de fragmentos de alma, animaciones pequeñas para Trance de las Sombras, Cosecha de almas, Diezmar y Sombra y llama, barra de escudos, barra de golpe de la varita, cooldowns que vuelven, tus efectos en el objetivo, Bloqueo de hechizo listo, la vida del demonio, distancia y agro. /brujo
 ## Author: wowforeverplus
-## Version: 1.2.0
+## Version: 1.3.0
 ## Category: Class
 ## SavedVariables: WarlockGodDB
 ## SavedVariablesPerCharacter: WarlockGodCharDB
@@ -25,6 +25,7 @@ ReagentVendors.lua
 ReagentMap.lua
 GroupBuffs.lua
 Repair.lua
+GroupNeeds.lua
 Reminders.lua
 Buffs.lua
 Food.lua

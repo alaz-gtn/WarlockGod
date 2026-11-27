@@ -93,6 +93,7 @@ local defaults = {
 	groupBuffs = { enabled = true },
 	-- Gear under this % and bags with this many free slots or fewer, beside the chat (Repair.lua)
 	repair = { enabled = true, low = 25, bags = 2, auto = false },
+	groupNeeds = { enabled = true, anywhere = false, blessing = "wisdom" },
 	-- Reagents running low, beside the chat with the food reminder (Reagents.lua)
 	reagents = { enabled = true, buy = false, map = true },
 	-- Herbalism or Mining without its tracking on, out in the world (Gathering.lua)

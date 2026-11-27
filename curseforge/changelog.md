@@ -1,3 +1,7 @@
+# 1.3.0
+
+- **Missing buffs row** in dungeons and raids: a small row with the buffs your group can give you and you don't have (Arcane Intellect with a mage in the group, Fortitude with a priest, Mark of the Wild with a druid, a blessing per paladin). Click one to ask for it in the group chat ("Missing Arcane Intellect"); the paladin's lets you pick the blessing to ask for, and remembers it. Your own class's buffs are left out, and nothing in combat. Drag it with Move displays; an option turns it off, another shows it outside dungeons too.
+
 # 1.2.0
 
 - **Reagent vendors on the world map**: the vendors who sell the reagents of the spells you know (Infernal Stones, Demonic Figurines), only your faction's, each pin with the reagent's icon. Hover one for what it has of yours and how many you carry; click it for a waypoint (TomTom's if you have it). None with Reagent Economy. An option in the reagents section turns it off. Data from QuestieDB. If you update with the game open, restart it: the addon brings a new Libs folder.

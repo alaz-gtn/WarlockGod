@@ -602,6 +602,10 @@ local function Build()
 		function(v) db.repair.bags = v ns.RefreshRepair() end)
 	y = Check(page, y, ns.REPAIR_TEXT.OPT_AUTO, function() return db.repair.auto end, function(v) db.repair.auto = v end,
 		"Interface\\Icons\\INV_Misc_Coin_02")
+	y = Check(page, y, ns.GROUP_NEEDS_TEXT.OPT, function() return db.groupNeeds.enabled end,
+		function(v) db.groupNeeds.enabled = v ns.UpdateGroupNeeds() end)
+	y = Check(page, y, ns.GROUP_NEEDS_TEXT.OPT_ANYWHERE, function() return db.groupNeeds.anywhere end,
+		function(v) db.groupNeeds.anywhere = v ns.UpdateGroupNeeds() end)
 	y = Section(page, y, L.SEC_GROUP_BUFFS)
 	y = Check(page, y, L.OPT_GROUP_BUFFS, function() return db.groupBuffs.enabled end,
 		function(v) db.groupBuffs.enabled = v ns.RefreshGroupBuffs() end)
