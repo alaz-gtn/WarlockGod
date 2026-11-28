@@ -84,6 +84,21 @@ local function Cooling(w)
 	return active and true or false, info
 end
 
+-- Is the global cooldown running? nil when the game won't say. While it runs, any spell shows as
+-- cooling down: that alone says nothing about its own cooldown (as MageGod 1.5.1)
+local GCD_SPELL = 61304
+local function GlobalRunning()
+	local info = C_Spell.GetSpellCooldown(GCD_SPELL)
+	if type(info) ~= "table" or ns.IsSecret(info) then return nil end
+	local active = info.isActive
+	if active == nil or ns.IsSecret(active) then
+		local duration = info.duration
+		if duration == nil or ns.IsSecret(duration) then return nil end
+		active = duration > 0
+	end
+	return active and true or false
+end
+
 -- Is that its own cooldown and not the global one? nil when the game won't say
 local function Own(w, info)
 	local duration = info.duration
@@ -93,7 +108,11 @@ local function Own(w, info)
 	if not w.items and C_Spell.GetSpellCooldownDuration then
 		local timer = C_Spell.GetSpellCooldownDuration(w.known, true)
 		local zero = timer and timer.IsZero and timer:IsZero()
-		if zero ~= nil and not ns.IsSecret(zero) then return not zero end
+		-- While the global one runs this may count it too: it can't tell then
+		if zero ~= nil and not ns.IsSecret(zero) then
+			if not zero and GlobalRunning() ~= false then return nil end
+			return not zero
+		end
 	end
 end
 
@@ -204,19 +223,28 @@ local function Check(w)
 	w.blind = nil
 	if cooling then
 		local own = not w.own and Own(w, info)
-		if own then w.own = true end
+		if own then w.own, w.real = true, true end
 		-- Only the global cooldown, as the game says: its time doesn't count. Spells cast one after
-		-- another chain them for longer than any one, and that isn't the spell's own coming back
-		if own == false and not w.own then w.since = now end
-		if not w.since then w.since = now end
+		-- another chain them for longer than any one, and that isn't the spell's own coming back.
+		-- In combat it may not say whose it is: while the global one runs, the wait doesn't start
+		local global = not w.own and own == nil and GlobalRunning()
+		if w.own then
+			w.since = w.since or now
+			w.real = true
+		elseif own == false or global and not w.real then
+			w.since = now -- the global one, or maybe: its wait starts afresh
+		else
+			w.since = w.since or now
+			if global == false then w.real = true end -- the global one is over and it still cools down
+		end
 	elseif w.since then
 		if not stale and (w.own or now - w.since > GCD_MAX) and db.enabled and db.spells[w.key] and ns.IsWarlock()
 			and not ns.Dead() then
 			ns.Pulse(Icon(w))
 		end
-		w.since, w.own = nil, false
+		w.since, w.own, w.real = nil, false, nil
 	elseif w.own and w.castAt and now - w.castAt > 1 then
-		w.own = false -- the cast never showed a cooldown
+		w.own, w.real = false, nil -- the cast never showed a cooldown
 	end
 end
 

@@ -1235,6 +1235,46 @@ tick()
 check(pplace.shown and part.icon.tex == 52320, "the Soulstone ready again: its icon")
 tick(1.2)
 S.itemCooldowns = lua.table()
+# In combat, instant spells one after another: the global cooldown never stops, and the game
+# won't say whose cooldown it is (its timer may even count the global one)
+def gcd(active):
+    G.COOLDOWNS[61304] = lua.table(isActive=active, duration=G.SECRET, startTime=G.SECRET)
+
+
+def hidden_coil(active):
+    G.COOLDOWNS[6789] = lua.table(isActive=active, duration=G.SECRET, startTime=G.SECRET, isOnGCD=G.SECRET)
+
+
+for _ in range(5):
+    gcd(True)
+    hidden_coil(True)
+    G.Fire("SPELL_UPDATE_COOLDOWN")
+    for _ in range(7):
+        tick()
+gcd(False)
+hidden_coil(False)
+tick()
+check(not pplace.shown, "in combat, five global cooldowns in a row: no pulse for Death Coil")
+tick(1.2)
+# Death Coil cast in a fight, unseen: once the global cooldown is over it still cools down, so it's its own
+G.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", G.SECRET)
+gcd(True)
+hidden_coil(True)
+G.Fire("SPELL_UPDATE_COOLDOWN")
+tick(1.5)
+gcd(False)
+tick()
+for i in range(9):
+    gcd(i % 2 == 0)
+    tick(1.5)
+hidden_coil(False)
+gcd(True)
+tick()
+check(pplace.shown and part.icon.tex == 6789, "in combat, Death Coil back after its own cooldown, even under other global cooldowns: pulse")
+tick(1.2)
+G.COOLDOWNS[61304] = None
+G.COOLDOWNS[6789] = None
+tick(1.2)
 out = slash("pulso" if es else "cooldowns")
 check(pplace.shown, "/warlockgod cooldowns shows it")
 tick(1.2)
