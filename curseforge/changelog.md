@@ -2,6 +2,7 @@
 
 - **No more false "back" pulses** in combat (Death Coil, Howl of Terror...): casting instant spells one after another kept the global cooldown running non-stop, and since the game hides cooldown times in a fight, that looked like those spells cooling down. Now the global cooldown is checked on its own and its time doesn't count.
 - **Nor after a silence, a stun or a school lockout**: while one lasts, the game shows every spell cooling down, and when it ended the addon took them as back. Now that time doesn't count either.
+- **Fixed a Lua error** ("Auras cannot be accessed when secret while tainted") when a group member was in combat: the group buff rows now leave them out until the fight is over.
 
 # 1.3.0
 
