@@ -89,6 +89,9 @@ G = { class = "WARLOCK", level = 20, known = {}, auras = {}, auraTimes = {}, sec
       pet = false, petDead = false, petHealth = 100, petHealthMax = 100, secretPetHealth = false, mounted = false,
       tipsLoading = false }
 G.petSpells = {}
+-- Loss of control: a silence, a stun or your school locked out (how many are on you)
+G.LOC = 0
+C_LossOfControl = { GetActiveLossOfControlDataCount = function() return G.LOC end }
 G.durability, G.freeSlots, G.party, G.partyAuras = {}, {}, {}, {}
 PixelUtil = { GetPixelToUIUnitFactor = function() return 0.5 end }
 C_CurveUtil = { CreateCurve = function()
@@ -1275,6 +1278,40 @@ tick(1.2)
 G.COOLDOWNS[61304] = None
 G.COOLDOWNS[6789] = None
 tick(1.2)
+# A mob silences you: every spell shows cooling down for 4 s, and none of them was
+S.LOC = 1
+for _ in range(20):
+    hidden_coil(True)
+    tick()
+S.LOC = 0
+hidden_coil(False)
+tick()
+check(not pplace.shown, "a silence ending: no pulse for Death Coil")
+tick(1.2)
+S.LOC = 1
+G.COOLDOWNS[6789] = lua.table(isActive=True, duration=4, startTime=S.now, isOnGCD=False)
+G.Fire("SPELL_UPDATE_COOLDOWN")
+for _ in range(20):
+    tick()
+S.LOC = 0  # the game says it's over a moment before the spells
+tick()
+G.COOLDOWNS[6789] = lua.table(isActive=False, duration=0, startTime=0, isOnGCD=False)
+tick(0.1)
+check(not pplace.shown, "a silence ending, its time showing: no pulse")
+tick(1.2)
+# Death Coil already cooling down when the silence comes: it still pulses when it's back
+G.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", 6789)
+G.COOLDOWNS[6789] = lua.table(isActive=True, duration=120, startTime=S.now, isOnGCD=False)
+G.Fire("SPELL_UPDATE_COOLDOWN")
+S.LOC = 1
+tick(4)
+S.LOC = 0
+tick(116)
+G.COOLDOWNS[6789] = lua.table(isActive=False, duration=0, startTime=0, isOnGCD=False)
+tick()
+check(pplace.shown and part.icon.tex == 6789, "cooling down before a silence: its pulse still comes")
+tick(1.2)
+G.COOLDOWNS[6789] = None
 out = slash("pulso" if es else "cooldowns")
 check(pplace.shown, "/warlockgod cooldowns shows it")
 tick(1.2)

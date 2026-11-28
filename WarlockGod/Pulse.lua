@@ -99,6 +99,19 @@ local function GlobalRunning()
 	return active and true or false
 end
 
+-- Silenced, stunned, or your school locked out: the game shows every spell cooling down until it
+-- ends, and that says nothing about their own cooldowns. nil when the game won't say (MageGod 1.5.2)
+local function Locked(spell)
+	if C_Spell.GetSpellLossOfControlCooldown then
+		local _, duration = C_Spell.GetSpellLossOfControlCooldown(spell)
+		if type(duration) == "number" and not ns.IsSecret(duration) and duration > 0 then return true end
+	end
+	if C_LossOfControl and C_LossOfControl.GetActiveLossOfControlDataCount then
+		local count = C_LossOfControl.GetActiveLossOfControlDataCount()
+		if type(count) == "number" and not ns.IsSecret(count) then return count > 0 end
+	end
+end
+
 -- Is that its own cooldown and not the global one? nil when the game won't say
 local function Own(w, info)
 	local duration = info.duration
@@ -221,7 +234,13 @@ local function Check(w)
 	-- After a stretch where the game wouldn't say, what it says now may be old news
 	local stale = w.blind and now - w.blind > 1
 	w.blind = nil
-	if cooling then
+	-- Half a second more: the game may say the silence is over a moment before the spells. A stone's
+	-- cooldown is the item's: no silence shows on it
+	if cooling and not w.items and not w.real and Locked(w.known) then w.lockedAt = now end
+	if cooling and not w.real and w.lockedAt and now - w.lockedAt < 0.5 then
+		-- What it shows now may be the silence's: its wait starts again when that is over
+		w.own, w.since = false, now
+	elseif cooling then
 		local own = not w.own and Own(w, info)
 		if own then w.own, w.real = true, true end
 		-- Only the global cooldown, as the game says: its time doesn't count. Spells cast one after
@@ -242,7 +261,7 @@ local function Check(w)
 			and not ns.Dead() then
 			ns.Pulse(Icon(w))
 		end
-		w.since, w.own, w.real = nil, false, nil
+		w.since, w.own, w.real, w.lockedAt = nil, false, nil, nil
 	elseif w.own and w.castAt and now - w.castAt > 1 then
 		w.own, w.real = false, nil -- the cast never showed a cooldown
 	end
