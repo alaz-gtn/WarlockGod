@@ -1312,6 +1312,26 @@ tick()
 check(pplace.shown and part.icon.tex == 6789, "cooling down before a silence: its pulse still comes")
 tick(1.2)
 G.COOLDOWNS[6789] = None
+# Shooting the wand: each shot shows the spells cooling down, its time hidden, the global one not
+# running (so the spell's timer says it's its own)
+G.COOLDOWNS[61304] = lua.table(isActive=False, duration=0)
+G.Fire("START_AUTOREPEAT_SPELL")
+for _ in range(10):
+    hidden_coil(True)
+    G.Fire("SPELL_UPDATE_COOLDOWN")
+    for _ in range(8):
+        tick()
+check(not pplace.shown, "shooting the wand: no pulse while it shoots")
+G.Fire("STOP_AUTOREPEAT_SPELL")
+for _ in range(8):
+    tick()
+hidden_coil(False)
+tick()
+check(not pplace.shown, "the wand stopped, its last shot over: no pulse")
+S.now = S.now + 3
+tick()
+G.COOLDOWNS[61304] = None
+G.COOLDOWNS[6789] = None
 out = slash("pulso" if es else "cooldowns")
 check(pplace.shown, "/warlockgod cooldowns shows it")
 tick(1.2)

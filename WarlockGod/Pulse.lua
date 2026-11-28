@@ -112,6 +112,13 @@ local function Locked(spell)
 	end
 end
 
+-- Shooting your wand: every shot shows your spells cooling down for a moment, one after another,
+-- and that isn't theirs. Until a little after the last shot (MageGod 1.5.4)
+local shooting, shotUntil = false, 0
+local function Shooting(now)
+	return shooting or now < shotUntil
+end
+
 -- Is that its own cooldown and not the global one? nil when the game won't say
 local function Own(w, info)
 	local duration = info.duration
@@ -234,9 +241,10 @@ local function Check(w)
 	-- After a stretch where the game wouldn't say, what it says now may be old news
 	local stale = w.blind and now - w.blind > 1
 	w.blind = nil
-	-- Half a second more: the game may say the silence is over a moment before the spells. A stone's
-	-- cooldown is the item's: no silence shows on it
-	if cooling and not w.items and not w.real and Locked(w.known) then w.lockedAt = now end
+	-- A silence, or your wand shooting, isn't the spell's own cooldown. Half a second more: the game may
+	-- say the silence is over a moment before the spells. A stone's cooldown is the item's: neither
+	-- shows on it
+	if cooling and not w.items and not w.real and (Shooting(now) or Locked(w.known)) then w.lockedAt = now end
 	if cooling and not w.real and w.lockedAt and now - w.lockedAt < 0.5 then
 		-- What it shows now may be the silence's: its wait starts again when that is over
 		w.own, w.since = false, now
@@ -339,6 +347,8 @@ events:SetScript("OnEvent", function(self, event, unit, _, spellID)
 		self:RegisterEvent("SPELLS_CHANGED")
 		self:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
 		pcall(self.RegisterEvent, self, "BAG_UPDATE_COOLDOWN")
+		pcall(self.RegisterEvent, self, "START_AUTOREPEAT_SPELL") -- an event the game doesn't have would stop the file
+		pcall(self.RegisterEvent, self, "STOP_AUTOREPEAT_SPELL")
 		ns.StylePulse()
 		Watch()
 	elseif event == "SPELLS_CHANGED" then
@@ -351,6 +361,12 @@ events:SetScript("OnEvent", function(self, event, unit, _, spellID)
 		for _, w in ipairs(WATCH) do
 			if w.known and w.names[name] then w.own, w.castAt = true, GetTime() end
 		end
+		Watch()
+	elseif event == "START_AUTOREPEAT_SPELL" then
+		shooting = true
+		Watch()
+	elseif event == "STOP_AUTOREPEAT_SPELL" then
+		shooting, shotUntil = false, GetTime() + 2.5 -- the last shot's wait
 		Watch()
 	else
 		Watch()

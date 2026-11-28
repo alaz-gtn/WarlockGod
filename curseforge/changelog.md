@@ -1,3 +1,7 @@
+# 1.3.2
+
+- **No more false "back" pulses after shooting your wand**: each shot shows your spells cooling down for a moment, and since the game hides cooldown times in a fight, that looked like their own cooldown. Now the time you spend shooting, and a moment after, doesn't count.
+
 # 1.3.1
 
 - **No more false "back" pulses** in combat (Death Coil, Howl of Terror...): casting instant spells one after another kept the global cooldown running non-stop, and since the game hides cooldown times in a fight, that looked like those spells cooling down. Now the global cooldown is checked on its own and its time doesn't count.
